@@ -17,7 +17,7 @@ I think this looks fresher than the old version. At the same time it also works 
 Now it not only looks better, the HTML needed to generate this is also a lot simpler. Let's have a quick look at the HTML:
 
 {lang="HTML"}
-~~~
+```
 <body>
     <div class="header">
         <div class="home-menu pure-menu pure-menu-open pure-menu-horizontal pure-menu-fixed">
@@ -55,7 +55,7 @@ Now it not only looks better, the HTML needed to generate this is also a lot sim
     </div>
     <!-- Scripts omitted -->
 </body>
-~~~
+```
 
 I like ***[Pure](http://purecss.io)** for the simplicity of its grid model. Although this is not a book about HTML and CSS, let's still walk through the HTML as it comes in handy when you want to design a web application.
 
@@ -64,11 +64,11 @@ In the _header_ ````div````, we create another ````div````. We assign it a coupl
 Next comes the actual content of the page, which we find inside a ````div````  assigned the _content-wrappper_-class. In there, we first have a ````div```` with class _l-box_, which gives us a little bit of padding:
 
 {lang="CSS"}
-~~~
+```
 .l-box {
   padding: 1em 1em 0 1em;
 }
-~~~
+```
 
 Inside, we place ````div````s with the IDs _tweet-count_, _search_, _pagination_ and _sort-buttons_. These are the IDs we render the respective components into using Reagent, remember?
 

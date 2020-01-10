@@ -10,7 +10,7 @@ A transducing function which has access to the ````subscriptions```` atom then p
 
 Without further ado, here's the **[code](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/src/clj/birdwatch/percolator/component.clj)**:
 
-~~~
+```
 (ns birdwatch.percolator.component
   (:gen-class)
   (:require
@@ -45,11 +45,11 @@ Without further ado, here's the **[code](https://github.com/matthiasn/BirdWatch/
         (assoc component :percolation nil :register-percolation nil :percolation-matches nil)))
 
 (defn new-percolation-channels [] (map->Percolation-Channels {}))
-~~~
+```
 
 If the explanations above haven't made a lot of sense to you yet, no worries, the **[code](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/src/clj/birdwatch/percolator/elastic.clj)** will explain:
 
-~~~
+```
 (ns birdwatch.percolator.elastic
   (:gen-class)
   (:require
@@ -81,7 +81,7 @@ If the explanations above haven't made a lot of sense to you yet, no worries, th
   "create transducer for adding de-ref'd subscription to percolation result"
   [subscriptions]
   (map (fn [[t matches]] [t matches @subscriptions])))
-~~~
+```
 
 In ````run-percolation-loop````, the ````params```` of a **search** are taken off the ````register-percolation-chan```` and the ````start-percolator```` function is called with this map, the connection ````conn```` and the ````subscriptions```` atom. This function then uses ````query```` and ````uid```` from ````params```` to ````swap!```` the ````subscriptions```` atom by ````assoc````ing the ````sha```` hash of a query into the map under the ````uid```` key. In addition, it registers the ````query```` in ElasticSearch's percolator index, with the ````sha```` as the ID.
 

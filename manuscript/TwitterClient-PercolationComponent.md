@@ -10,7 +10,7 @@ The registration of queries in the percolation index and the delivery happens in
 
 In this component, new tweets are matched against existing searches, which returns a sequence of matching query IDs. New tweets are received on the ````:percolation```` channel and results (tweet with set of matches) are put on the ````:percolation-matches```` channel from the Percolation-Channels component. Here's the **[component itself](https://github.com/matthiasn/BirdWatch/blob/5fe69fbfaa956039e1f89a26811d0c86775dd594/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/percolator/component.clj)**:
 
-~~~
+```
 (ns birdwatch-tc.percolator.component
   (:gen-class)
   (:require
@@ -43,13 +43,13 @@ In this component, new tweets are matched against existing searches, which retur
         (assoc component :percolation nil :percolation-matches nil)))
 
 (defn new-percolation-channels [] (map->Percolation-Channels {}))
-~~~
+```
 
 The component follows the pattern of creating ````defrecord````s for the component itself plus an associated channels component in the same way that we've seen already. You may not have seen **pipeline-blocking** yet, so let me explain. A **[pipeline](https://clojure.github.io/core.async/#clojure.core.async/pipeline)** is a **core.async** construct that we can use when we want to take something off a channel, process it and put the result onto another channel, all potentially in parallel. In this case, we use two parallel blocking pipelines since querying ElasticSearch here is a blocking operation and we want to be able to run two in parallel at any moment.
 
 All we need to supply to the pipeline is a **[transducing function](https://github.com/matthiasn/BirdWatch/blob/5fe69fbfaa956039e1f89a26811d0c86775dd594/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/percolator/elastic.clj)**, which we look at next:
 
-~~~
+```
 (ns birdwatch-tc.percolator.elastic
   (:gen-class)
   (:require
@@ -66,7 +66,7 @@ All we need to supply to the pipeline is a **[transducing function](https://gith
          (let [response (perc/percolate conn "percolator" "tweet" :doc t)
                matches (set (map :_id (esrsp/matches-from response)))] ;; set with SHAs
            [t matches]))))
-~~~
+```
 
 So here's what this function does. For every element (which we know is a tweet) that the pipeline construct processes by using the transducing function, we pass the item to the percolator, which first gives us a response. We then use ````esrsp/matches-from```` to retrieve the actual matches, use ````map```` to only get the ````:_id```` from each match and create a ````set```` from these matches.
 

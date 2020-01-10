@@ -12,7 +12,7 @@ This component interacts with the rest of the application through four channels,
 
 Here's the entire **[namespace](https://github.com/matthiasn/BirdWatch/blob/54a03b1a5d1324075ca4e75451a2bc752a2ab9e3/Clojure-Websockets/MainApp/src/cljs/birdwatch/communicator.cljs)**:
 
-~~~
+```
 (ns birdwatch.communicator
   (:require-macros [cljs.core.async.macros :refer [go-loop]])
   (:require [cljs.core.match :refer-macros [match]]
@@ -58,21 +58,21 @@ Here's the entire **[namespace](https://github.com/matthiasn/BirdWatch/blob/54a0
         handler (make-handler cmd-chan data-chan stats-chan)]
     (sente/start-chsk-router! ch-recv handler)
     (query-loop qry-chan send-fn state)))
-~~~
+```
 
 Let's go through this def by def, function by function.
 
-~~~
+```
 (def packer
   "Defines our packing (serialization) format for client<->server comms."
   (sente-transit/get-flexi-packer :json))
-~~~
+```
 
 This defines the packer for sente, we're using **[transit](http://blog.cognitect.com/blog/2014/7/22/transit)** here. 
 
 Next, we have the ````make-handler```` function, which, as the name suggests, creates a handler function for handling incoming messages on the WebSocket connection. The returned handler function then already knows what channels to put messages onto, as these were specified in the initial call to the ````make-handler```` function that constructed the handler function.
 
-~~~
+```
 (defn make-handler
   "Create handler function for messages from WebSocket connection, wire channels and the
    start-function to call when the socket is established."
@@ -89,7 +89,7 @@ Next, we have the ````make-handler```` function, which, as the name suggests, cr
                :stats   (put! stats-chan payload)
                :default (print "unmatched message" payload)))
            :else (print "Unmatched event: %s" event))))
-~~~
+```
 
 The event received by the handler function above is pattern matched using ````core.match````, where we always have a vector with two elements. The first match is triggered when ````event```` contains ````:chsk/state```` with ````:first-open?```` set to ````true````, which happens when the connection to the server has been established. In that case, ````"WS connected"```` is printed on the browser console and a ````[:start-search]```` message is put onto the ````cmd-chan```` in order to start a search.
 
@@ -97,7 +97,7 @@ Next, when a vector is received that contains ````:chsk/recv```` in the first po
 
 Next, we have the ````query-loop```` function. This function starts a ````go-loop```` that takes messages from the specified channel and then uses the specified send-fn to send an item to the server.
 
-~~~
+```
 (defn query-loop
   "Take command / query message off of channel, enrich payload with :uid of current
    WebSocket connection and send to server. Channel is injected when loop is started."
@@ -106,13 +106,13 @@ Next, we have the ````query-loop```` function. This function starts a ````go-loo
            (let [[cmd-type payload] (<! channel)]
              (send-fn [cmd-type (assoc payload :uid (:uid @chsk-state))])
              (recur))))
-~~~
+```
 
 Not surprisingly, this function also expects items on the channel to be two-item vectors, as we can see in the destructuring when taking an item off the channel: ````(let [[cmd-type payload] (<! channel)]````. The function also takes ````chsk-state````, which is the atom associated with the sente connection to the server. Here, the ````:uid```` from the map held in ````chsk-state```` is used so that the server has information about the client ID and can thus return responses to the correct client. 
 
 Finally, we have the ````start-communicator```` function. This function fires up the WebSocket connection, calls the ````make-handler```` function and starts the ````query-loop````.
 
-~~~
+```
 (defn start-communicator
   "Start communicator by wiring channels."
   [cmd-chan data-chan stats-chan qry-chan]
@@ -121,7 +121,7 @@ Finally, we have the ````start-communicator```` function. This function fires up
         handler (make-handler cmd-chan data-chan stats-chan)]
     (sente/start-chsk-router! ch-recv handler)
     (query-loop qry-chan send-fn state)))
-~~~
+```
 
 This function takes the four channels we saw in the architectural drawing above and wires them accordingly. Before that can happen, ````sente/make-channel-socket!```` is called with a route for the connection and the packer. Obviously, the route needs to match the one used on the server side. This function returns a map, from which we require three keys: ````{:keys [ch-recv send-fn state]}````. 
 

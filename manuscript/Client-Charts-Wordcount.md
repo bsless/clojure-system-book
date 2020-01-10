@@ -5,7 +5,7 @@ The word count trends chart shows the top 25 words within the body of tweets loa
 
 Let's start with the simplest part, the ````birdwatch.charts.shapes```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/83ff6bfc4b930e877f8f8414b53fc381bf5b4366/Clojure-Websockets/MainApp/src/cljs/birdwatch/charts/shapes.cljs)**:
 
-~~~
+```
 (ns birdwatch.charts.shapes)
 
 (def arrows
@@ -19,13 +19,13 @@ Let's start with the simplest part, the ````birdwatch.charts.shapes```` **[names
   (let [[color points] (dir arrows)
         arrowTrans (str "translate(" x ", " (+ y 7) ") scale(0.01) ")]
     [:polygon {:transform arrowTrans :stroke "none" :fill color :points points}]))
-~~~
+```
 
 Above, we first have a map named ````arrows````, which contains a vector with the color and the points for each arrow polygon. Then, we have a Reagent component that takes ````x```` and ````y```` coordinates and the direction ````dir```` and that returns a ````:polygon```` in the matching shape and color for the specified orientation of the arrow, positioned at the specified coordinates.
 
 The ````arrow```` component is used in the ````birdwatch.charts.wordcount-chart```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/83ff6bfc4b930e877f8f8414b53fc381bf5b4366/Clojure-Websockets/MainApp/src/cljs/birdwatch/charts/wordcount_chart.cljs)**, which we'll look at next:
 
-~~~
+```
 (ns birdwatch.charts.wordcount-chart
   (:require-macros [cljs.core.async.macros :refer [go-loop]])
   (:require [birdwatch.util :as util]
@@ -100,11 +100,11 @@ The ````arrow```` component is used in the ````birdwatch.charts.wordcount-chart`
                (<! (timeout every-ms))
                (recur)))
     (sub state-pub :app-state state-chan)))
-~~~
+```
 
 Okay, there is quite a bit to go through here, and the code also takes care of the linear regression for the trend arrows. Before discussing each function, let's have a look at the ````birdwatch.stats.regression```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/83ff6bfc4b930e877f8f8414b53fc381bf5b4366/Clojure-Websockets/MainApp/src/cljs/birdwatch/stats/regression.cljs)** first:
 
-~~~
+```
 (ns birdwatch.stats.regression)
 
 (defn square [x] (* x x))
@@ -129,7 +129,7 @@ Okay, there is quite a bit to go through here, and the code also takes care of t
             reg-ss (* slope Lxy)
             res-ms (/ (- Lyy reg-ss) (- n 2))]
         [intercept slope]))))
-~~~
+```
 
 I've adapted the code from **[Statistical functions in Common Lisp. Version 1.04](http://compbio.ucdenver.edu/Hunter_lab/Hunter/cl-statistics.lisp)** and just removed the stuff I didn't need. I also created the functions ````square```` and ````mean```` for use in the ````linear-regression```` function below.
 
@@ -139,16 +139,16 @@ Why linear regression, you may ask? Linear regression allows us to fit a predict
 
 In this particular case, we're not using the model for specific predictions; instead, we're simply looking at the slope to determine if there's an upward or a downward trend overall for a specific word.
 
-~~~
+```
 (def pos-trends (atom {}))
 (def pos-items (atom {}))
 (def ratio-trends (atom {}))
 (def ratio-items (atom {}))
-~~~
+```
 
 We need a couple of ````atom````s in order to store data related to the intended regression analysis, as you can see above. These are then used in the ````update-words```` function:
 
-~~~
+```
 (defn- update-words
   "update wordcount chart"
   [words]
@@ -162,7 +162,7 @@ We need a couple of ````atom````s in order to store data related to the intended
              (get (reg/linear-regression (take 3 (get @pos-items text))) 1))
       (swap! ratio-trends assoc-in [text]
              (get (reg/linear-regression (take 1000 (get @ratio-items text))) 1)))))
-~~~
+```
 
 First of all, the function takes the parameter ````words````, which is the current top-n list from the application state. We use that to ````reset!```` the ````items```` atom as a vector of indexed vectors, in which the index is in first position and a vector with ````text```` and ````count```` in the second position, as you can see in the ````do-seq```` below: ````[idx [text cnt]]````.
 
@@ -170,7 +170,7 @@ Next, we dereference ````items```` and get ````total-cnt````, which is simply th
 
 Now let's have a look at the ````bar```` component:
 
-~~~
+```
 (defn- bar [text cnt y h w idx cmd-chan]
   (let [pos-slope (get @pos-trends text)
         ratio-slope (get @ratio-trends text)]
@@ -182,13 +182,13 @@ Now let's have a look at the ````bar```` component:
      (if (> w 50)
        [:text (merge text-defaults {:y (+ y 8) :x (+ w 160)}) cnt]
        [:text (merge text-defaults {:y (+ y 8) :x (+ w 171) :fill "#666" :textAnchor "start"}) cnt])]))
-~~~
+```
 
 For every bar, we dereference ````pos-slope```` and ````ratio-slope````. With that, we create a ````:g```` element, which is a group in SVG. Within it, we position text, the arrows and the bar rectangle ````:rect````. Finally, depending on the width of the bar, we position the counter either inside the bar when it's wide enough or outside when it's too narrow.
 
 To put things together, we then have the ````wordcount-barchart```` component:
 
-~~~
+```
 (defn- wordcount-barchart [cmd-chan]
   (let [indexed @items
         mx (apply max (map (fn [[idx [k v]]] v) indexed))
@@ -205,13 +205,13 @@ To put things together, we then have the ````wordcount-barchart```` component:
       " ratio change termCount / totalTermsCounted over last "
       [:select {:defaultValue 100}
        (for [[v t] opts] ^{:key v} [:option {:value v} t])]]]))
-~~~
+```
 
 The ````wordcount-barchart```` renders a ````:div```` with the ````:svg```` inside, with one ````bar```` component for each item in ````indexed````, which is the dereferenced ````items```` atom. In addition, there's some text plus a ````:select````, which is intended for choosing the number of recent items to include in the regression analysis over the ratios. That's not actually implemented yet, though. Pull request, anyone?
 
 Finally, the chart needs to be mounted, which follows the pattern we've seen a few times already:
 
-~~~
+```
 (defn mount-wc-chart
   "Mount wordcount bar chart and wire channels for incoming data and outgoing commands.
    The number of bars and the wait time until re-render is specified in the configuration map."
@@ -224,6 +224,6 @@ Finally, the chart needs to be mounted, which follows the pattern we've seen a f
                (<! (timeout every-ms))
                (recur)))
     (sub state-pub :app-state state-chan)))
-~~~
+```
 
 Other than in the time series chart, I'm not storing the atoms inside the let-binding of the ````mount-wc-chart```` function. There's not specific reason for that, one could as well keep the atoms contained inside the function.

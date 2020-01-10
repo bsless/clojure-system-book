@@ -17,9 +17,9 @@ This mechanism with passing new state[^props] now works particularly well with i
 
 However when you study its documentation, you will notice that UI components directly interact with application state held in atoms. While that may be fine for small applications, I do not like this approach when the application becomes more complex and we want to handle state alterations in a specialized part of the application. In that case, when I wear the hat of the developer who works on the "business logic" of the application, I would not want the UI developer to be able to change something so that all of a sudden my artifact appears to be broken, even if some other part of the application is to blame. When you think about an atom, guess what happens when you get a hold of it and run something like this:
 
-~~~
+```clojure
 (reset! app-atom {})
-~~~
+```
 
 Oops. Now this major glitch would be easy to detect, at least in terms of something serious being wrong, but the effect could be much more subtle by only altering or removing a key somewhere inside the application state. Long story short, as the business logic guy, I would sleep better when the devs working on other parts of the application could not cause these problems. This does not change at all when the UI guy happens to be me. When my mind works in the context of UI, it shouldn't also have to be careful about not accidentally tripping on some wire in the business logic. It's a major selling point for immutable data, after all, that it's safe to pass around. An atom is not safe to pass around. Anyone who gets a hold of it can do anything to it. Only the dereferenced value inside an atom at any given moment in time is safe to pass around.
 

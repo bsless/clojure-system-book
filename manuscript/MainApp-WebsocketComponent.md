@@ -6,7 +6,7 @@ This component handles the interaction with the web clients. It distributes mess
 
 The actual communication over the network is then handled by the HttpComponent which we will look at briefly in the next chapter. Here are the ````Communicator```` and the ````Communicator-Channels``` **[components](https://github.com/matthiasn/BirdWatch/blob/a7a27c76fb4a882daa485d0231de30c1cc078652/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/component.clj)**:
 
-~~~
+```
 (ns birdwatch.communicator.component
   (:gen-class)
   (:require
@@ -57,13 +57,13 @@ The actual communication over the network is then handled by the HttpComponent w
                          :missing-tweet-found nil :tweet-count nil)))
 
 (defn new-communicator-channels [] (map->Communicator-Channels {}))
-~~~
+```
 
 The ````Communicator-Channels```` component has more channels than the other components we've seen so far, but there's really no limit on how many we can use. There's a channel for passing query requests on from clients to some query processor, another channel for results, the same for missing tweets, a channel to send off requests for registering percolation, a channel that frequently delivers stats about the index size in ElasticSearch and a channel that delivers the percolation matches. Note that like in all other components, we don't have to know anything about the implementation of any other component in the system. All we need to know are the channels for interfacing with the outside world.
 
 Here's the associated **[namespace](https://github.com/matthiasn/BirdWatch/blob/3c793a8ded198ba9aa2360f1efb538dd548383b2/Clojure-Websockets/MainApp/src/clj/birdwatch/communicator/websockets.clj)**:
 
-~~~
+```
 (ns birdwatch.communicator.websockets
   (:gen-class)
   (:require
@@ -126,7 +126,7 @@ Here's the associated **[namespace](https://github.com/matthiasn/BirdWatch/blob/
              (inspect :comm/connected-uids uids)
              (doseq [uid uids] (chsk-send! uid [:stats/users-count (count uids)])))
            (recur)))
-~~~
+```
 
 The ````user-id-fn```` function takes care of generating a random UUID for each new connection.
 

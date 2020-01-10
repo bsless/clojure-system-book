@@ -11,7 +11,7 @@ I chose **Pub/Sub** over a queue because I wanted to **[fan-out](http://en.wikip
 
 Let's look at some code. First of all, I am using a **component** that provides a **send channel** and a **receive channel**. It can be reused on either side of the Pub/Sub connection (or for bidirectional communication, of course). Here's the **[code](https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/component.clj)**.
  
-~~~
+```
 (ns birdwatch-tc.interop.component
   (:gen-class)
   (:require
@@ -42,11 +42,11 @@ Let's look at some code. First of all, I am using a **component** that provides 
          (assoc component :send nil :receive nil)))
 
 (defn new-interop-channels [] (map->Interop-Channels {}))
-~~~
+```
 
 The ````Interop-Channels```` component can now be wired into the ````Interop```` component where we create a configuration map and start a send loop with this configuration for the **"matches"** topic. Here's that **[run-send-loop](https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/redis.clj)** function:
 
-~~~
+```
 (ns birdwatch-tc.interop.redis
   (:gen-class)
   (:require
@@ -87,7 +87,7 @@ The ````Interop-Channels```` component can now be wired into the ````Interop````
   "close listener"
   [listener]
   (car/close-listener listener))
-~~~
+```
 
 Here, we are only using ````run-send-loop```` to start sending all messages that come in on a channel.
 Specifically, this````go-loop```` consumes all messages that come in on the ````send-chan```` channel and publishes them on the ````topic```` in Redis for the specified configuration connection ````conn````. None of the other functions is used here, but this component is the same on both sides of the pub/sub. We will look at the counterpart when looking at the **MainApp** application.

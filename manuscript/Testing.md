@@ -73,13 +73,13 @@ Unless you're in the business of building CI servers, I can only recommend you s
 
 **[TravisCI](https://travis-ci.org/matthiasn/systems-toolbox)** is quite easy to use. Once you've signed up, all you need to do is add a YAML file named `.travis.yml` to your repository. In the case of the systems-toolbox, it looks as follows:
 
-~~~
+```
 language: clojure
 lein: lein2
 script: lein2 test
 jdk:
   - oraclejdk8
-~~~
+```
 
 This file defines that the project is written in Clojure, that we want Leiningen 2 to run the test, and that we want the test to run on an Oracle JDK 8. Once this file exists, TravisCI will happily test your Clojure repository on every commit ever after. Oddly, as of this writing, surprisingly there was no `openjdk8` available.
 
@@ -94,19 +94,19 @@ I'm missing an easy way to have JUnit reports available in TravisCI. The `lein t
 
 **[CircleCI](https://circleci.com/gh/matthiasn/systems-toolbox/tree/master)** feels quite similar to TravisCI. It is also configured with a YAML file in the root of your project, only that here it is called `circle.yml`. For the systems-toolbox, it looks as follows:
 
-~~~~
+```~
 test:
   override:
     - lein test2junit
   post:
     - ant
-~~~~
+```~
 
 Here, I'm using the `lein test2junit` task to generate JUnit-style test reports. Then, once the test has completed, I run `ant` to create an HTML report, which will then be available with the artifacts of the particular build. For that, a small modification of the `project.clj` file is also required:
 
-~~~
+```
   :test2junit-output-dir ~(or (System/getenv "CIRCLE_TEST_REPORTS") "target/test2junit")
-~~~
+```
 
 With these modifications, we can now keep the JUnit reports without having to set up S3.
 
@@ -135,42 +135,42 @@ I've established above why I want to test code written in **cljc** on both the *
 
 Adding doo is easy, you add it to the plugins section in `project.clj`:
 
-~~~
+```
   :plugins [[lein-codox "0.9.4"]
             [test2junit "1.2.1"]
             [lein-doo "0.1.6"]
             [lein-cljsbuild "1.1.2"]]
-~~~
+```
 
 And then you add a build config for it:
 
-~~~
+```
   :cljsbuild {:builds [{:id           "cljs-test"
                         :source-paths ["src" "test/cljs"]
                         :compiler     {:output-to     "out/testable.js"
                                        :main          matthiasn.systems-toolbox.runner
                                        :optimizations :whitespace}}]}
-~~~
+```
 
 Here, I've added an initial test in the `test/cljs` path. Then, there's a runner namespace, in which we define the tests to call:
 
-~~~
+```
 (ns matthiasn.systems-toolbox.runner
   (:require [doo.runner :refer-macros [doo-tests]]
             [matthiasn.systems-toolbox.test]))
 
 (doo-tests 'matthiasn.systems-toolbox.test)
-~~~
+```
 
 Before converting tests, let's try something simple.
 
-~~~
+```
 (ns matthiasn.systems-toolbox.test
   (:require [cljs.test :refer-macros [deftest is]]))
 
 (deftest do-i-work
   (is (= 2 2)))
-~~~
+```
 
 With these namespaces in place, we can now call test tests, for example `$ lein doo firefox cljs-test once`. Oops, I'm writing this on a machine that didn't have the **karma** test runner installed. If you can't run `$ karma --version`, you want to install it with `$ npm install -g karma`, plus check the further error output that tells you clearly which additional **npm** modules you want to have installed. Or, obviously, if you don't have **npm** available, you want to get it from **[Node.js](https://nodejs.org/en/)** first. With the dependencies met, my initial test runs fine.
 
@@ -181,7 +181,7 @@ Now I should just be able to rename my existing tests to `.cljc` and be off to t
 
 Using **promises** for determining when the assertions should be made was not a bad idea, were it not for the lack of them on the ClojureScript side. But, **core.async** to the rescue, we can model the behavior of promises ourselves. In core.async, there's a **promise-chan**, which can only be delivered on once. 'put!' then gives us the `deliver` functionality for promises. For finally waiting for either a result or a timeout, which is done by `deref` with promises, we can use `alts!`. Let's look at a super simple **[example](https://github.com/matthiasn/systems-toolbox/blob/af1cb5368628d158141808dfbe2f409effd13511/test/matthiasn/systems_toolbox/component_test.cljc#L15)** first:
 
-~~~
+```
 (deftest cmp-all-msgs-handler
   "Tests that a very simple component that only has a handler for all messages regardless of type receives all
   messages sent to the component. State management of the component is not used here, instead we keep track
@@ -206,13 +206,13 @@ Using **promises** for determining when the assertions should be made was not a 
                            (is (true? (<! all-recvd))))
                          (testing "sent messages equal received messages"
                            (is (= msgs-to-send @msgs-recvd)))))))
-~~~
+```
 
 As you can see above, there's the **promise-chan** `all-recvd`, onto which we `put!` a message (`true` in this case) when done. Then, in the `go` block inside the call to `tp/w-timeout`, we can wait for the promise-chan to be delivered on first, before proceding with other assertions that only make sense when the promise is delivered.
 
 This `w-timeout` function implements behavior differently, depending on the target platform. Let's have a look at the whole **[namespace](https://github.com/matthiasn/systems-toolbox/blob/9286c070f8be8684cf69676adc9bbaa393832201/test/matthiasn/systems_toolbox/test_promise.cljc)**. However, this is optional, it requires some understanding of `go` blocks and channels, which the systems-toolbox tries to hide from you. So feel free to skip the next code block and only use this promise-like behavior as a recipe, if you so desire.
 
-~~~
+```
 (ns matthiasn.systems-toolbox.test-promise
 
   "Provide a promise-like experience for testing."
@@ -250,7 +250,7 @@ This `w-timeout` function implements behavior differently, depending on the targ
   [ms ch]
   (test-async
     (test-within ms ch)))
-~~~
+```
 
 First, the `test-async` function implements the wait differently. On the JVM, we have the blocking `<!!` which simply blocks until there's value on the channel. On the ClojureScript side, we can make use of `async` to achieve the same thing. Note that the channel here, when composed in `w-timeout`, is the `go` block inside `test-within`. As mentioned, `go` blocks return a channel, onto which their return value will be put on completion.
 
@@ -267,7 +267,7 @@ In `w-timeout`, these two functions are then combined into one that takes both t
 
 The other day, I wanted to know how many messages the systems-toolbox could process per second, for a single component. So I wrote an initial test for that and got like 70K messages per second. Now, this is probably not terrible, especially in the browser where I currently cannot think of any application that would need anything near this number. Here's the **[test](https://github.com/matthiasn/systems-toolbox/blob/cbeeb951d34f65da60e8772f194c7e609b71eae1/test/matthiasn/systems_toolbox/component_test.cljc#L40)**:
 
-~~~
+```
 
 (defn cmp-all-msgs-handler-cmp-state-fn
   []
@@ -316,11 +316,11 @@ The other day, I wanted to know how many messages the systems-toolbox could proc
 
 (deftest cmp-all-msgs-handler-cmp-state6
   (cmp-all-msgs-handler-cmp-state-fn))
-~~~
+```
 
 What happens here is that I take an atom with the number zero in it, and the range from zero to 100,000 (exclusive) and send each number in that range to the component `cmp`, which adds each to its component state. Then, in the assertions section, I calculate how many messages per second the processing time corresponds to, print that value for reference, assert that it's large enough, and finally check that all numbers were processed by comparing the number in the component state with the result of `(reduce + (range cnt)`. I also make an assertion about the number of messages per second being high enough here, but that's probably not terribly useful as this number has to be pretty conservative anyway to take into account less powerful nodes, such as the ones used by TravisCI or CircleCI. Also note that the test code is in a function that I then call multiple times to see how much of an effect JIT compilation has on the result. Apparently, some optimizations do kick in on subsequent runs:
 
-~~~
+```
 lein test matthiasn.systems-toolbox.component-test
 DEBUG m.systems-toolbox.component-test - Msgs/s: 62814
 DEBUG m.systems-toolbox.component-test - Msgs/s: 71479
@@ -328,7 +328,7 @@ DEBUG m.systems-toolbox.component-test - Msgs/s: 91575
 DEBUG m.systems-toolbox.component-test - Msgs/s: 88731
 DEBUG m.systems-toolbox.component-test - Msgs/s: 78616
 DEBUG m.systems-toolbox.component-test - Msgs/s: 89928
-~~~
+```
 
 Okay, roughly 60K messages per second on the first run and then towards 90K messages per second on subsequent runs. Doesn't sound that terrible.
 
@@ -336,7 +336,7 @@ Then on the next day, I went for breakfast with my friend Peter. I told him what
 
 That made me wonder where time was spent in my library, so I set out to check what the JVM is capable of. I started with looking at atoms and how often I can reset or swap them per second. Here's the test for resetting an atom:
 
-~~~
+```
 (defn reset-atom-repeatedly-fn
   []
   "This test aims at getting some perspective how expensive resetting an atom is in Clojure/ClojureScript.
@@ -354,13 +354,13 @@ That made me wonder where time was spent in my library, so I set out to check wh
 (deftest reset-atom-repeatedly
   (dotimes [_ test-runs]
     (reset-atom-repeatedly-fn)))
-~~~
+```
 
 Okay, so even when I run this test alone in a cold JVM with `$ lein test :only matthiasn.systems-toolbox.runtime-perf-test/reset-atom-repeatedly` and only a single run, I get anywhere between 29 and 43 **million** ops/sec. When I set `test-runs` to 10, I even get up to **90 million** ops/sec on the JVM. On phantom, there's no noticeable effect of JIT on subsequent runs, by the way. But there I also don't know how to isolate test runs, so likely the JIT optimizations will already have kicked in by the time the tests run. Still, I get a solid 15 million ops/sec in phantom at the time of writing. On Chrome, I got 38 million ops/sec and on Firefox, I got a whopping **66 million** ops/sec. Interesting, last time I checked, Chrome was faster than any other browser, but that does not seem to be the case any longer. Anyway, in either case, resetting an atom is quite obviously not a bottleneck on any of those platforms.
 
 Hmm, maybe the atom watching, which leads to publishing a new state snapshot when a change is detected, could be the culprit? Let's check:
 
-~~~
+```
 (defn swap-watched-atom-repeatedly-fn
   []
   "This test aims at getting some perspective how expensive swapping an atom is in Clojure/ClojureScript.
@@ -378,11 +378,11 @@ Hmm, maybe the atom watching, which leads to publishing a new state snapshot whe
 (deftest swap-watched-atom-repeatedly
   (dotimes [_ test-runs]
     (swap-watched-atom-repeatedly-fn)))
-~~~
+```
 
 Nope. Almost 70 million ops/sec on Firefox and 40 million ops/sec on the JVM (on repeated runs) suggest differently. Hmm, could it be core.async? Let's see:
 
-~~~
+```
 (defn put-on-chan-repeatedly-fn
   "Channel with attached mult and no other channels tapping into mult: messages silently dropped."
   []
@@ -414,11 +414,11 @@ Nope. Almost 70 million ops/sec on Firefox and 40 million ops/sec on the JVM (on
   (put-on-chan-repeatedly-fn))
 (deftest put-on-chan-repeatedly6
   (put-on-chan-repeatedly-fn))
-~~~
+```
 
 Okay, around 1 million ops/sec on Firefox and a little under 250K ops/sec on the JVM (on repeated runs). Now this is substantially slower than the atom operations. We might be onto something here, since the library does multiple core.async operations for each message. Let's emulate the (basic) behavior of the library using core.async directly:
 
-~~~
+```
 
 (defn put-consume-mult-w-pub-repeatedly-fn
   "Channel with attached go-loop, simple calculation using messages from channel, publication of state change. This
@@ -470,7 +470,7 @@ Okay, around 1 million ops/sec on Firefox and a little under 250K ops/sec on the
   (put-consume-mult-w-pub-repeatedly-fn))
 (deftest put-consume-mult-w-pub-repeatedly6
   (put-consume-mult-w-pub-repeatedly-fn))
-~~~
+```
 
 Here, we do roughly the same a component in the systems-toolbox does, which receives messages on a channel, process them in a `go-loop` (which is hidden from the user in the case of the systems-toolbox), and publish state changes onto the `state-pub-chan`. Et voilà, the results are pretty much the same as we see when processing messages with the systems-toolbox, with around 90K msgs/sec on the JVM.
 

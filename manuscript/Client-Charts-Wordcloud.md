@@ -6,7 +6,7 @@ The word cloud is generated using **[D3.js](http://d3js.org)** and Jason Davies'
 
 Here's the ClojureScript code to interact with ````wordcloud.js```` in the ````birdwatch.charts.cloud-chart```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/83ff6bfc4b930e877f8f8414b53fc381bf5b4366/Clojure-Websockets/MainApp/src/cljs/birdwatch/charts/cloud_chart.cljs)**:
 
-~~~
+```
 (ns birdwatch.charts.cloud-chart
   (:require-macros [cljs.core.async.macros :refer [go-loop]])
   (:require [birdwatch.util :as util]
@@ -29,7 +29,7 @@ Here's the ClojureScript code to interact with ````wordcloud.js```` in the ````b
                (<! (timeout every-ms))
                (recur)))
     (sub state-pub :app-state state-chan)))
-~~~
+```
 
 By now, there should be any surprises in here at all any more. We have the ````go-loop```` listening to state changes and the timeout for control over how often a value is taken off the channel. This is particularly important for the word cloud as this is by far the most CPU-intensive operation in the entire BirdWatch application. It would be interesting to implement the word cloud in pure ClojureScript. Maybe one day. 
 

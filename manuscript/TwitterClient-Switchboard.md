@@ -12,7 +12,7 @@ In the conceptual drawing we can see that in this component the channels from di
 
 Let's have a look at the **[code](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/switchboard.clj)**:
 
-~~~
+```
 (ns birdwatch-tc.switchboard
   (:gen-class)
   (:require
@@ -37,6 +37,6 @@ Let's have a look at the **[code](https://github.com/matthiasn/BirdWatch/blob/43
         (assoc component :tweets-mult nil)))
 
 (defn new-switchboard [] (map->Switchboard {}))
-~~~
+```
 
 Here, the only thing that really happens is that we create a ````mult```` from the ````:tweets```` channel, which is a multiplier that allows us to connect multiple channels that each consume all elements on the ````mult````. Then, we ````tap```` into the ````mult```` and connect both the ````:percolation```` and the ````:persistence```` channels.

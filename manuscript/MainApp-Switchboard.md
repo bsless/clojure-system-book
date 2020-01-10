@@ -6,7 +6,7 @@ The ````SwitchBoard```` component is comparable to the one that we saw in the **
 
 Let's look at the code:
 
-~~~
+```
 (ns birdwatch.switchboard
   (:gen-class)
   (:require
@@ -36,7 +36,7 @@ Let's look at the code:
         (assoc component :tweets-mult nil)))
 
 (defn new-switchboard [] (map->Switchboard {}))
-~~~
+```
 
 In this component, we only ````pipe```` channels into each other thus facilitating only one-on-one connections. When looking at the code right now, I realize that the ````tweets-mult```` is actually not used at all. I remember though that when removing it and reloading the application on the **repl**, the application did not work any longer. Supposedly, that had something to do with the **component** library not recognizing that anything in the component could change and thus holding on to the wrong component instance from the first initialization and, as a result, holding on to channels that aren't in use any longer. But that is just a hunch and probably should be explored further.
 

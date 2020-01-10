@@ -2,7 +2,7 @@
 
 The ````birdwatch.wordcount```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/8a469ff1493816dbedc6cbca9b51fe915aec487f/Clojure-Websockets/MainApp/src/cljs/birdwatch/stats/wordcount.cljs)** is responsible for running word count statistics over tweets received from the server for both live tweets and chunks of previous tweets.
 
-~~~
+```
 (ns birdwatch.wordcount
   (:require [clojure.string :as s]
             [birdwatch.util :as util]))
@@ -37,7 +37,7 @@ The ````birdwatch.wordcount```` **[namespace](https://github.com/matthiasn/BirdW
        (map s/lower-case ,)
        (map #(s/replace % #"[;:,/‘’…~\-!?\[\]\"<>()\"@.]+" "" ) ,)
        (filter (fn [item] (not (contains? stop-words item))) ,)))
-~~~
+```
 
 First, we define a set named ````stop-words````. It actually has many more entries but is shortened here so that it fits the page format better. These words are not counted towards the result as they aren't very interesting to look at in the word cloud and the bar chart.
 

@@ -5,7 +5,7 @@ maybe this **[tutorial](https://developer.mozilla.org/en-US/docs/Web/SVG/Tutoria
 
 Okay, with that being said, let's dive into the code:
 
-~~~
+```
 (ns matthiasn.systems-toolbox-ui.charts.histogram
   "Functions for building a histogram, rendered as SVG using Reagent and React."
   (:require [matthiasn.systems-toolbox-ui.charts.math :as m]))
@@ -113,13 +113,13 @@ Okay, with that being said, let's dive into the code:
                        :bin-cf   0.8
                        :min-bins 5
                        :max-bins 25})])
-~~~
+```
 
 Okay, that was a bit involved. But hey, to use a histogram in your project, all you need is to import this namespace, and then use a one-liner to plot your histogram (and more chart types to come - feel free to contribute).
 
 After skim reading the namespace, are you still interested in constructing charts? Good, then let's go through function by function:
 
-~~~
+```
 (defn histogram-view
   "Renders an individual histogram for the given data, dimension, label and
    color, with a reasonable size inside a viewBox, which will then scale
@@ -139,11 +139,11 @@ After skim reading the namespace, are you still interested in constructing chart
                        :bin-cf   0.8
                        :min-bins 5
                        :max-bins 25})])
-~~~
+```
 
 The `histogram-view` function simply creates a container `:svg` element, which scales into its parent element through the `:width "100%"` setting. Also note the `:viewBox "0 0 400 250"`, which allows us to work with a useful coordinate system that's independent of the size of the rendered element. Finally, we pass some data to the `histogram-view-fn`, which we'll look into next.
 
-~~~
+```
 (defn histogram-view-fn
   "Renders a histogram. Only takes care of the presentational aspects, the
    calculations are done in the histogram-calc function in
@@ -166,7 +166,7 @@ The `histogram-view` function simply creates a container `:svg` element, which s
        [insufficient-data x y w warning])
      [histogram-x-axis x (+ y 7) mn2 mx2 w x-scale increment x-label]
      [histogram-y-axis (- x 7) y h (or binned-freq-mx 5) y-label]]))
-~~~
+```
 
 Above, we render an **[SVG g element](https://developer.mozilla.org/en/docs/Web/SVG/Element/g)**, which contains the histogram. Before we can render the bars of the histogram, we need to calculate a few things from the provided data, which happens in the first line in the `let` binding:
 
@@ -192,7 +192,7 @@ Then, we render the **x-axis** by calling `histogram-x-axis`, and the **y-axis**
 
 The functions for rendering the axes are fairly straightforward. Here's the `histogram-x-axis` function:
 
-~~~
+```
 (defn histogram-x-axis
   "Draws x-axis for histogram."
   [x y mn mx w scale increment x-label]
@@ -208,7 +208,7 @@ The functions for rendering the axes are fairly straightforward. Here's the `his
                                    :y (+ y 20)}) n])
      [:text (merge x-axis-label text-bold {:x (+ x (/ w 2))
                                            :y (+ y 48)}) x-label]]))
-~~~
+```
 
 The mechanism here will probably look fairly familiar by now:
 
@@ -222,7 +222,7 @@ Both `for`-comprehensions make use of the range `rng`, which is a sequence from 
 
 Here's the aforementioned `path` function, which is only a thin wrapper over `:path`, with a few defaults, so we save some typing later on:
 
-~~~
+```
 (defn path
   "Renders path with the given path description attribute."
   [d]
@@ -230,12 +230,12 @@ Here's the aforementioned `path` function, which is only a thin wrapper over `:p
           :stroke       :black
           :stroke-width 1
           :d            d}])
-~~~
+```
 
 
 The `histogram-y-axis` is somewhat similar, only that here we can calculate more in the function, as we don't need `scale` or `rng` in the calculation of the bins:
 
-~~~
+```
 (defn histogram-y-axis
   "Draws y-axis for histogram."
   [x y h mx y-label]
@@ -257,7 +257,7 @@ The `histogram-y-axis` is somewhat similar, only that here we can calculate more
               (merge x-axis-label text-bold {:x         x-coord
                                              :y         y-coord
                                              :transform rotate})) y-label]]))
-~~~
+```
 
 Other than calculating the `rng` and `scale` locally inside the `let`-binding, the function is pretty much the same as the `histogram-y-axis` function, with the other difference that the paths and labels are rotated, as obviously, the y-axis is vertical. If you want to learn more about **SVG** paths, I'd recommend either one of the tutorials out there, or to just modify the values and see how that affects the histogram. For that, I would copy the code over into the sample app and use **Figwheel** for immediate feedback. Otherwise, you'd have to publish the library locally after each change, and then recompile the sample application, which takes away all the fun. Tight feedback loops are important.
 

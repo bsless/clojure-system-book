@@ -8,7 +8,7 @@ The code is comparable to the ````InterOp```` component on the other side, only 
 
 ![MainApp - InterOp Component](images/mainapp_interop.png)
 
-~~~
+```
 (ns birdwatch.interop.component
   (:gen-class)
   (:require
@@ -41,11 +41,11 @@ The code is comparable to the ````InterOp```` component on the other side, only 
          (assoc component :send nil :receive nil)))
 
 (defn new-interop-channels [] (map->Interop-Channels {}))
-~~~
+```
 
 No big surprises here. Just like for the publisher side, there's the configuration map. Next, we subscribe to a topic and hold on to the returned listener so that we can unsubscribe from the topic and close it later. All of these functions can be found in the ````redis```` **[namespace](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/MainApp/src/clj/birdwatch/interop/redis.clj)**, which is the same as on the other side of the pub/sub:
 
-~~~
+```
 (ns birdwatch.interop.redis
   (:gen-class)
   (:require
@@ -88,6 +88,6 @@ No big surprises here. Just like for the publisher side, there's the configurati
   "close listener"
   [listener]
   (car/close-listener listener))
-~~~
+```
 
 The only difference between both sides of the **pub/sub** lies in the functions we use. One could also implement bidirectional communication between two components by utilizing all of these functions. Maybe this is something that could be moved into a library at some point when having a clearer understanding of real-world requirements.

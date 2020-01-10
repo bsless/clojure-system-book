@@ -40,7 +40,7 @@ WebSockets are also nice because you get an ordering guarantee, which would be m
 
 Anyway, let's look at some code, starting with where the messages originate in our example, the `:client/mouse-cmp` component, and its respective **[namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_mouse_moves.cljs)**:
 
-~~~
+```
 (ns example.ui-mouse-moves
   (:require [matthiasn.systems-toolbox-ui.reagent :as r]
             [matthiasn.systems-toolbox-ui.helpers :refer [by-id]]))
@@ -125,11 +125,11 @@ Anyway, let's look at some code, starting with where the messages originate in o
               :dom-id  "mouse"
               :init-fn init-fn
               :cfg     {:msgs-on-firehose true}}))
-~~~
+```
 
 Here, we have a UI component that covers the entire page. This is facilitated by the following **CSS**:
 
-~~~
+```
 #mouse {
     position: absolute;
     top: 0;
@@ -138,7 +138,7 @@ Here, we have a UI component that covers the entire page. This is facilitated by
     z-index: 10;
     margin-left: -12.5%;
 }
-~~~
+```
 
 Note that we want this transparent element on top, covering the rest of the page, which is what the `z-index` does. Also, we want `pointer-events` to reach the elements below, for example for clicking links or buttons, so we set them to `none`.
 
@@ -152,7 +152,7 @@ In the screenshot above, you can see green circles for the mouse moves captured 
 
 Let's go through the **[namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_mouse_moves.cljs)**, function by function, starting from the bottom:
 
-~~~
+```
 (defn cmp-map
   "Configuration map for systems-toolbox-ui component."
   [cmp-id]
@@ -161,13 +161,13 @@ Let's go through the **[namespace](https://github.com/matthiasn/systems-toolbox/
               :dom-id  "mouse"
               :init-fn init-fn
               :cfg     {:msgs-on-firehose true}}))      
-~~~
+```
 
 The `cmp-map` function creates the component map, which is like a blueprint that tells the switchboard how to fire up the component. The **UI** part is done by calling `r/cmp-map`, which is the main function in the **systems-toolbox-ui** library. Once the returned map is sent to the switchboard, a component will be initialized that renders the `mouse-view` function into the **DOM element** with the `"mouse"` ID.
 
 Then, there's the `init-fn`:
 
-~~~
+```
 (defn init-fn
   "Listen to onmousemove events for entire page, emit message when fired.
   These events are then sent to the server for measuring the round-trip time,
@@ -181,25 +181,25 @@ Then, there's the `init-fn`:
           (let [t (aget (.-targetTouches ev) 0)]
             (put-fn [:mouse/pos {:x (.-pageX t) :y (.-pageY t)}])
             #_(.preventDefault ev)))))
-~~~
+```
 
 This function takes care of registering handler functions for all mouse movements (and also touch movement, for that matter) for the entire window. By doing that here, for the entire window, we can get away with the `mouse-view` element not getting any mouse movement events, which is required for still reacting to clicks in elements that are in fact covered by it, since it spans the entire page. When such an event is encountered, a `:mouse/pos` message is sent, which then happens to be received by both the `:client/store-cmp` and the `:server/pos-cmp`. Not that this component needs to be concerned with that in any way, though - there's proper decoupling between them.
 
 You can see how those messages are supposed to look like in the respective **specs**:
 
-~~~
+```
 (s/def :ex/x pos-int?)
 (s/def :ex/y pos-int?)
 
 (s/def :mouse/pos
   (s/keys :req-un [:ex/x :ex/y]))
-~~~
+```
 
 If you still haven't heard Rich Hickey talk about **[clojure.spec](http://clojure.org/about/spec)** on the **[Cognicast](http://blog.cognitect.com/cognicast/103)**, you seriously need to do that now. **clojure.spec** has many useful properties. Among them is that you'll immediately know if you've broken your application with some recent change, as the system would throw an error immediately, rather than drag that problem along and blow up in your face somewhere else, where you'll have a hard time figuring out where it originated. What's also very useful is that when you come back to some code you wrote some time ago and wanted to know what a message is supposed to look like, you don't have to print it out and infer what the rules may be. No, instead you just look at the piece of code that's run when validating the message, it'll tell you all nitty-gritty details of what the expectations are. Much nicer.
 
 Next, let's have a look at the `mouse-view` function, which is responsible for rendering the UI component:
 
-~~~
+```
 (defn mouse-view
   "Renders SVG with both local mouse position and the last one returned from the
    server, in an area that covers the entire visible page."
@@ -221,13 +221,13 @@ Next, let's have a look at the `mouse-view` function, which is responsible for r
       (when (-> state-snapshot :show-all :server)
         [mouse-hist-view state-snapshot :server-hist
          "rgba(0,0,0,0.06)" "rgba(0,0,128,0.05)"])]]))
-~~~
+```
 
 Note that this component gets passed a map with the `observed` and `local` keys. The `observed` key is an atom which holds the state of the component it observes. Here, this is always the latest snapshot of the `store-cmp`. The `local` atom contains some local state, such as the width of the SVG for resizing. Note that we're detecting the width on every call to the function, and also in the `onresize` callback of `js/window`. This ensures that the mouse div fills the entire page, while working with the correct pixel coordinate system. One could instead also use a viewBox, like this: `{:width "100%" :viewBox "0 0 1000 1000"}`. However, that would not work correctly in this case as the mouse position would not be aligned with the circles here.
 
 Next, we have the `trailing-circles` function:
 
-~~~
+```
 (defn trailing-circles
   "Displays two transparent circles. The position of the circles comes from
    the most recent messages, one sent locally and the other with a roundtrip to
@@ -241,19 +241,19 @@ Next, we have the `trailing-circles` function:
      [:circle (merge circle-defaults {:cx (:x from-server)
                                       :cy (:y from-server)
                                       :fill "rgba(0,0,255,0.1)"})]]))
-~~~
+```
 
 This one renders an SVG group with the two circles inside. Then, there are some defaults for the different elements, which can be merged with more specific maps as desired:
 
-~~~
+```
 (def circle-defaults {:fill "rgba(255,0,0,0.1)" :stroke "black" :stroke-width 2 :r 15})
 (def text-default {:stroke "none" :fill "black" :style {:font-size 12}})
 (def text-bold (merge text-default {:style {:font-weight :bold :font-size 12}}))
-~~~
+```
 
 Finally, there's the `mouse-hist-view` function:
 
-~~~
+```
 (defn mouse-hist-view
   "Render SVG group with filled circles from a vector of mouse positions in state."
   [state state-key stroke fill]
@@ -268,7 +268,7 @@ Finally, there's the `mouse-hist-view` function:
                    :cx           (:x pos)
                    :cy           (:y pos)
                    :fill         fill}])])))
-~~~
+```
 
 Here, the history of mouse movements is rendered, either for your local mouse movements, or the last 1000 from all users. You've seen how that looks like in the screenshot above.
 
@@ -277,7 +277,7 @@ Here, the history of mouse movements is rendered, either for your local mouse mo
 
 That's it for the rendering of the mouse element. The messages emitted there then get sent both to the client-side and the server-side store components. Let's discuss the server side first, before looking into the wiring of the components. It's really short; this is the entire **[example.pointer](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljc/example/pointer.cljc)** namespace:
 
-~~~
+```
 (ns example.pointer
   "This component receives messages, keeps a counter, decorates them with the
    state of the counter, and sends them back. Here, this provides a way to
@@ -312,7 +312,7 @@ That's it for the rendering of the mouse element. The messages emitted there the
                  :mouse/get-hist get-mouse-hist}
    :opts        {:msgs-on-firehose      true
                  :snapshots-on-firehose true}})
-~~~
+```
 
 At the bottom, you see the `cmp-map`, which again is the map specifying the component that the switchboard will then instantiate. Inside, there's the `:state-fn`, which does nothing but create the initial state inside an atom. Then, there's the `:handler-map`, which here handles the two message types `:cmd/mouse-pos` and `:mouse/get-hist`.
 
@@ -329,7 +329,7 @@ Next, the messages need to get from the UI component to the server, and back to 
 
 For establishing these connections, let's have a look at the `core` namespaces on both server and client, starting with the **[client](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/core.cljs)**:
 
-~~~
+```
 (ns example.core
   (:require [example.spec]
             [example.store :as store]
@@ -376,7 +376,7 @@ For establishing these connections, let's have a look at the `core` namespaces o
   (observer/init! switchboard))
 
 (init!)
-~~~
+```
 
 
 First, as usual, we create a switchboard. Then, we send messages to the switchboard, with the blueprints for the components we want the switchboard to initialize. For the core functionality discussed so far, only three of them are important: `:client/ws-cmp`, `:client/mouse-cmp`, and `:client/store-cmp`. We'll look at the other components later.
@@ -400,7 +400,7 @@ At the bottom of the namespace, we also fire up the observer and metrics compone
 
 With the client-side wiring in place, let's look at the server-side wiring in **[core.clj](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/clj/example/core.clj)**:
 
-~~~
+```
 (ns example.core
   (:require [example.spec]
             [matthiasn.systems-toolbox.switchboard :as sb]
@@ -440,18 +440,18 @@ With the client-side wiring in place, let's look at the server-side wiring in **
   (log/info "Application started, PID" (pid/current))
   (restart!)
   (Thread/sleep Long/MAX_VALUE))
-~~~
+```
 
 Here, just like on the client side, a switchboard is kept in a `defonce`. Then, we ask the switchboard to instantiate two components for us, the `:server/ws-cmp` and the `:server/ptr-cmp`, and then wire a simple message flow together.
 
 We've already discussed the `:server/ptr-cmp` above. The `:server/ws-cmp` is the server side of the Sente-WebSockets component, and it takes a configuration map, which you can find in the **[example.index](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/clj/example/index.clj)** namespace:
 
-~~~
+```
 (def sente-map
   "Configuration map for sente-cmp."
   {:index-page-fn index-page
    :relay-types   #{:mouse/pos :stats/jvm :mouse/hist}})
-~~~
+```
 
 In this configuration map, we tell the component to relay three message types, `:mouse/pos`, `:stats/jvm`, and `:mouse/hist`. Also, we provide a function that renders the static HTML that is served to the clients. Have a look at the namespace to learn more. In particular, watch out for elements with an ID, such as `[:div#mouse]`, `[:figure#histograms.fullwidth]`, `[:div#info]`, or `[:div#observer]`. The client-side application will render dynamic content into these DOM elements.
 
@@ -470,7 +470,7 @@ Oh, before I forget, you can also reload the server side on the JVM from the **[
 
 This starts the server side application. Now change something, let's say in the `example.pointer` namespace, for example to print the message payload in `process-mouse-pos`:
 
-~~~
+```
 (defn process-mouse-pos
   "Handler function for received mouse positions, increments counter and returns
    mouse position to sender."
@@ -483,7 +483,7 @@ This starts the server side application. Now change something, let's say in the 
      :emit-msg (with-meta
                  [:mouse/pos (assoc msg-payload :count (:count new-state))]
                  msg-meta)}))
-~~~
+```
 
 With this change, all you need to do now is reload the modified namespace, and then call `restart!` again:
 
@@ -497,7 +497,7 @@ You will see that the application keeps functioning, while maintaining component
 
 Okay, now we have the message flow from capturing the mouse events to the server and back. Next, let's look at what happens to those events when they are back at the client. Processing of the returned data happens in the **[example.store namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/store.cljs)**:
 
-~~~
+```
 (ns example.store)
 
 (defn mouse-pos-handler
@@ -561,7 +561,7 @@ Okay, now we have the message flow from capturing the mouse events to the server
                  :mouse/hist   mouse-hist-handler}
    :opts        {:msgs-on-firehose      true
                  :snapshots-on-firehose true}})
-~~~
+```
 
 The `cmp-map` function once again generates the blueprint for how to instantiate this component. We specify that the initial component state is generated by calling the `state-fn`, which is a map with some keys as you can see above. Then, there are handler functions for three message types `:mouse/pos`, `:cmd/show-all`, and `:mouse/hist`, which we'll look at in detail. Finally, there is some configuration in `:opts`, which specifies that both messages and state snapshots should go on the firehose. We'll discuss the firehose when looking into the `:client/observer` component.
 
@@ -569,17 +569,17 @@ The most important handler function in this application is the `mouse-pos-handle
 
 In case the message is local, we do return new-state altered like this:
 
-~~~
+```
 (-> current-state
     (assoc-in [:local] msg-payload)
     (update-in [:local-hist] conj msg-payload))
-~~~
+```
 
 First, we set the `:local` key to contain the latest mouse position; then we add it to the local history.
 
 The branch when the message comes from the server is slightly more involved:
 
-~~~
+```
 (let [mouse-out-ts (:out-ts (:client/mouse-cmp msg-meta))
       store-in-ts (:in-ts (:client/store-cmp msg-meta))
       rt-time (- store-in-ts mouse-out-ts)
@@ -591,13 +591,13 @@ The branch when the message comes from the server is slightly more involved:
       (update-in [:rtt-times] conj rt-time)
       (update-in [:server-proc-times] conj srv-proc-time)
       (update-in [:network-times] conj (- rt-time srv-proc-time))))
-~~~
+```
 
 Here, we calculate a few durations, the `rt-time`, which is the entire roundtrip time, and the `srv-proc-time`, which the duration between the `:server/ws-cmp` passing the message from the client on, and the same component encountering the response. For fully understanding this, you need to know that the **systems-toolbox** automatically timestamps messages when they are received or sent by any component, and saves that on the message metadata. 
 
 Here's how the metadata looks like when the `:client/store-cmp` receives a `:mouse/pos` message from the server:
 
-~~~
+```
 {:server/ws-cmp    {:out-ts 1467046063466
                     :in-ts  1467046063467}
  :sente-uid        "25450474-0887-4612-b5ad-07d1ca1f4885"
@@ -614,45 +614,45 @@ Here's how the metadata looks like when the `:client/store-cmp` receives a `:mou
                     :out-ts 1467046063488}
  :tag              "61f2f357-3d12-40ff-9827-8a481cf36f75"
  :corr-id          "a31f12e7-33fb-48a8-833b-3d764c2c14bc"}
-~~~
+```
 
 In contrast, this is how it looks like when the message comes directly from `:client/mouse-cmp`:
 
-~~~
+```
 {:cmp-seq          [:client/mouse-cmp :client/store-cmp]
  :client/mouse-cmp {:out-ts 1467046063476}
  :corr-id          "2d32de55-cf1e-4646-8709-0c02c66d260f"
  :tag              "a7ebdac0-ce78-4e47-adbc-0b955efef5b4"
  :client/store-cmp {:in-ts 1467046063478}}
-~~~
+```
 
 Of course, we could have also looked for the existence of the `:server/ptr-cmp` key on the metadata, rather than looking for the `:count` key on the payload in the branching logic when determining if a message comes from the server, it does not matter.
 
 Okay, back to the `:client/store-cmp`. We do a little bit more there:
 
-~~~
+```
 (update-in [:network-times] conj (- rt-time srv-proc-time)
-~~~
+```
 
 Here, the RTT times are collected in a sequence so we can use the individual values as input to the histograms.
 
 Next, there's the `show-all-handler` function to look at:
 
-~~~
+```
 (defn show-all-handler
   "Toggles boolean value in component state for provided key."
   [{:keys [current-state msg-payload]}]
   {:new-state (update-in current-state [:show-all msg-payload] not)})
-~~~
+```
 
 This handler toggles the value in the view configuration for showing either `:local` or the `:remote` history of mouse positions. These are then used as switches in the `:client/mouse-cmp`, as we've seen above. Finally, there's the `mouse-hist-handler` function:
 
-~~~
+```
 (defn mouse-hist-handler
   "Saves the received vector with mouse positions in component state."
   [{:keys [current-state msg-payload]}]
   {:new-state (assoc-in current-state [:server-hist] msg-payload)})
-~~~
+```
 
 This handler takes care of a sequence of mouse positions received from the server and stores them in the component state, which is returned under the `:new-state` key in the returned map. If these are shown is then dependent on the `:remote` key in the `:show-all` map inside the component state. Typically, when the `:mouse/hist` is received, this switch will be set to true, as the request for these values and switching this key on will have been sent by the `:client/info-cmp` at the same time. The beauty of the UI component watching the state of another component which holds the application state is that we don't have to do anything else. Once the data is back from the server, the mouse component will just know that it needs to re-render itself, now with the new data available. This was all to the `:client/store-cmp`, so let's look into the next component, where the histograms are rendered. But actually, now might be a good time to take a break and go for a walk.
 
@@ -661,7 +661,7 @@ This handler takes care of a sequence of mouse positions received from the serve
 
 Okay, ready? Let's move on. We've got some ground to cover. The `:client/histogram-cmp` in the **[example.ui-histograms namespace](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/src/cljs/example/ui_histograms.cljs)** makes use of the data we just collected:
 
-~~~
+```
 (ns example.ui-histograms
   (:require [matthiasn.systems-toolbox-ui.reagent :as r]
             [matthiasn.systems-toolbox-ui.charts.histogram :as h]
@@ -698,13 +698,13 @@ Okay, ready? Let's move on. We've got some ground to cover. The `:client/histogr
               :cfg     {:throttle-ms           100
                         :msgs-on-firehose      true
                         :snapshots-on-firehose true}}))
-~~~
+```
 
 The most exciting stuff here happens in the histogram namespace of the **systems-toolbox-ui** library, but we'll get there. There are some things of interest here anyway. Did you notice the `:throttle-ms` key in the `:cfg` of the `cmp-map`? This tells the systems-toolbox to deliver new state snapshots only every 100 milliseconds. This throttling is done because it is expensive enough to calculate the histograms for us not to want to do it on every frame. Ten times a second appears to be a good compromise between feeling alive and saving some CPU cycles.
 
 The rest of this namespace is probably not terribly surprising by now. The `histograms-view` function, which is the `:view-fn` of this **systems-toolbox-ui** component, renders a `:div` with six different `histogram-view`s, which each renders into an SVG with the chart itself. In some cases, we do some data manipulation first, such as the `hist/percentile-range` from the library namespace. Notice that there are two `:div`s inside the parent, each with three elements inside? That's for the **[Flexible Box](https://www.w3.org/TR/2016/CR-css-flexbox-1-20160526/)** layout, also known as **flexbox**. The rest of the layout is then done in **[CSS](https://github.com/matthiasn/systems-toolbox/blob/master/examples/trailing-mouse-pointer/resources/public/css/example.css)**:
 
-~~~
+```
 #histograms {
     margin-bottom: 1em;
 }
@@ -713,7 +713,7 @@ The rest of this namespace is probably not terribly surprising by now. The `hist
     display: flex;
     flex-flow: row;
 }
-~~~
+```
 
 So what happens here is that we have two `flex` elements, each with `flex-flow: row;` so that each triplet will cover a row inside the available space.
 

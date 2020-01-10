@@ -6,7 +6,7 @@ This component takes care of persisting tweets to an index in ElasticSearch. Onc
 
 Because there is only a channel to take from but no other channel to put a result onto, we will not use a ````pipeline```` but instead run a good old ````go-loop````. Inside the **[component](https://github.com/matthiasn/BirdWatch/blob/5fe69fbfaa956039e1f89a26811d0c86775dd594/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/persistence/component.clj)**, there aren't any surprises:
 
-~~~
+```
 (ns birdwatch-tc.persistence.component
   (:gen-class)
   (:require
@@ -39,11 +39,11 @@ Because there is only a channel to take from but no other channel to put a resul
         (assoc component :persistence nil)))
 
 (defn new-persistence-channels [] (map->Persistence-Channels {}))
-~~~
+```
 
 All we see above is yet another component that really only has the single channel ````:persistence```` inside the ````Persistence-Channels```` component and that **[starts](https://github.com/matthiasn/BirdWatch/blob/43a9c09493257b9c9b5e9e5644df5f67085feb84/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/percolator/elastic.clj)** said ````go-loop```` and passes the channel plus some configuration and the connection object.
 
-~~~
+```
 (ns birdwatch-tc.persistence.elastic
   (:gen-class)
   (:require
@@ -61,7 +61,7 @@ All we see above is yet another component that really only has the single channe
                   (esd/put conn (:es-index conf) "tweet" (:id_str t) t)
                   (catch Exception ex (log/error ex "esd/put error"))))
            (recur)))
-~~~
+```
 
 The ````go-loop```` above is pretty straightforward. Whatever we encounter on this channel, we try to persist in ElasticSearch, inside the index as specified in ````(:es-index conf)````, for type ````tweet````, with ````(:id_str t)````as the **document id** and finally with the tweet ````t```` itself.
 

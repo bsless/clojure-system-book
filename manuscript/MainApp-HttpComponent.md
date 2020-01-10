@@ -6,7 +6,7 @@ The ````HttpServer```` component handles the network part of the interaction wit
 
 The ````Communicator```` component is a dependency of the ````HttpServer```` and gets passed when the application starts. Let's dive right into the **[code](https://github.com/matthiasn/BirdWatch/blob/574d2178be6f399086ad2a5ec35c200d252bf887/Clojure-Websockets/MainApp/src/clj/birdwatch/http/component.clj)**:
 
-~~~
+```
 (ns birdwatch.http.component
   (:gen-class)
   (:require
@@ -43,6 +43,6 @@ The ````Communicator```` component is a dependency of the ````HttpServer```` and
         (assoc component :server nil)))
 
 (defn new-http-server [conf] (map->Httpserver {:conf conf}))
-~~~
+```
 
 The component code is mostly taken from the **[sente example](https://github.com/ptaoussanis/sente/blob/master/example-project/src/example/my_app.cljx)**. I've only adapted it to fit into the component lifecycle so that the server is shut down when the component stops.

@@ -2,7 +2,7 @@
 
 In the `matthiasn.systems-toolbox-ui.charts.histogram` namespace, we used a handful of mathematical helper functions. These live in the **[matthiasn.systems-toolbox-ui.charts.math](https://github.com/matthiasn/systems-toolbox-ui/blob/master/src/cljc/matthiasn/systems_toolbox_ui/charts/math.cljc)** namespace. This is actually a **[cljc](https://github.com/clojure/clojurescript/wiki/Using-cljc)** file, which allows us to target both **Clojure** and **ClojureScript**. This is very useful for **testing** the functions on the **JVM**, which I much prefer over testing in the browser. Here's the entire namespace:
 
-~~~
+```
 (ns matthiasn.systems-toolbox-ui.charts.math)
 
 (defn mean
@@ -104,11 +104,11 @@ In the `matthiasn.systems-toolbox-ui.charts.histogram` namespace, we used a hand
      :binned-freq    binned-freq
      :binned-freq-mx (apply max (map (fn [[_ f]] f) binned-freq))
      :bins           (inc (apply max (map (fn [[v _]] v) binned-freq)))}))
-~~~
+```
 
 The first two functions here, `mean` and `median`, are borrowed from the **[Clojure Cookbook](https://github.com/clojure-cookbook/")**. I've adapted `median` to return `nil` when the collection is empty, as that's useful further on. I've taken those two functions because they are useful in my implementation of the **[interquartile range](https://en.wikipedia.org/wiki/Interquartile_range)**:
 
-~~~
+```
 (defn interquartile-range
   "Determines the interquartile range of values in a sequence of numbers.
    Returns nil when sequence empty or only contains a single entry."
@@ -119,11 +119,11 @@ The first two functions here, `mean` and `median`, are borrowed from the **[Cloj
         q1 (median (take half-cnt sorted))
         q3 (median (take-last half-cnt sorted))]
     (when (and q3 q1) (- q3 q1))))
-~~~
+```
 
 The `interquartile-range` function takes a sample, which is a sequence of numbers. If this sequence is empty, `nil` is returned. Otherwise, we `sort` the sequence, `count` it, and then take the `half-cnt`, which is the `floor` of dividing the `cnt` by two. This is the number of items in half the data, minus the halfway point if there is one (when `cnt` is odd). Then the values `q1` and `q3` are defined as the `median` of the first or last half of the values, respectively. Finally, the IQR is returned, which is the difference between `q1` and `q3`, and thus the range of half the data. The interquartile range is something we need to determine when computing the bin size via the **[Freedman-Diaconis Rule](https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule)**:
 
-~~~
+```
 (defn freedman-diaconis-rule
   "Implements approximation of the Freedman-Diaconis rule for determing bin size
    in histograms: bin size = 2 IQR(x) n^-1/3 where IQR(x) is the interquartile
@@ -133,7 +133,7 @@ The `interquartile-range` function takes a sample, which is a sequence of number
   (let [n (count sample)]
     (when (pos? n)
       (* 2 (interquartile-range sample) (Math/pow n (/ -1 3))))))
-~~~
+```
 
 The **[Freedman-Diaconis rule](https://en.wikipedia.org/wiki/Freedman%E2%80%93Diaconis_rule)** is fairly simply, once we have implemented the IQR:
 
@@ -145,7 +145,7 @@ Following these steps gives us a suggested size of the bins in a histogram, whic
 
 Then, there's also the `percentile-range` function:
 
-~~~
+```
 (defn percentile-range
   "Returns only the values within the given percentile range."
   [sample percentile]
@@ -153,13 +153,13 @@ Then, there's also the `percentile-range` function:
         cnt (count sorted)
         keep-n (Math/ceil (* cnt (/ percentile 100)))]
     (take keep-n sorted)))
-~~~
+```
 
 This function helps when trying to get rid of outliers, which may or may not be helpful in your data. Here, it sometimes helps, for example when all values are in the low hundreds, and there's a single outlier in the thousands, as that outlier would otherwise lead to bins that are too large, with many empty bins. As with all visualization, it depends on the data and requires some experimentation.
 
 Next, there are helpers for determining the intervals at which to put the ticks in the histogram axes:
 
-~~~
+```
 (defn best-increment-fn
   "Takes a seq of increments, a desired number of intervals in histogram axis,
    and the range of the values in the histogram. Sorts the values in increments
@@ -182,11 +182,11 @@ Next, there are helpers for determining the intervals at which to put the ticks 
         (int best-increment)
         best-increment))
     1))
-~~~
+```
 
 This is an interesting problem. Of course, we could hardwire the increments between the ticks, but then the histogram would hardly be reusable. My initial approach was something this:
 
-~~~
+```
 (defn default-increment-fn
   [rng]
   (cond (> rng 20000) 5000
@@ -198,7 +198,7 @@ This is an interesting problem. Of course, we could hardwire the increments betw
         (> rng 200) 50
         (> rng 90) 20
         :else 10))
-~~~ 
+``` 
 
 Depending on the range `rng`, I would select different spacing between the ticks on an axis. But that's not general enough. So what I came up with instead is this:
 
@@ -214,7 +214,7 @@ D> I'm always amazed that we can do all these calculations whenever there's a ch
 
 Finally in this namespace, there's the `histogram-calc` function:
 
-~~~
+```
 (defn histogram-calc
   "Calculations for histogram."
   [{:keys [data bin-cf max-bins increment-fn]}]
@@ -234,7 +234,7 @@ Finally in this namespace, there's the `histogram-calc` function:
      :binned-freq    binned-freq
      :binned-freq-mx (apply max (map (fn [[_ f]] f) binned-freq))
      :bins           (inc (apply max (map (fn [[v _]] v) binned-freq)))}))
-~~~
+```
 
 This function does all the required calculations to get the data into the shape that's required for the actual rendering of the histogram:
 

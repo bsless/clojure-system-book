@@ -16,10 +16,9 @@ Here is how that stream looks like when each chunk is simply printed to the cons
 
 For reasons unbeknownst to me, tweets stopped respecting the chunk borders for the last half year. Instead, tweets occasionally span two or three chunks. This makes processing the tweets a little more complicated than we might wish for. One tweet per chunk is straightforward: 
 
-{line-numbers=off,lang=text}
-~~~
+```
 Receive chunk -> parse JSON into map -> put on conveyor belt (channel)
-~~~
+```
 
 That looks like functional programming, right? No state to be kept anywhere, just functions producing results that are passed into other functions. But as desirable as that sounds, it does not align with reality. Instead, we need logical reasoning and state. What is the instruction we would give a sentient being? Imagine an intelligent agent standing between two conveyor belts. Imagine that agent being you. Here we go:
 
@@ -36,9 +35,9 @@ In a way, a transducer is the **essence** of a computation over data, without be
 
 Imagine we wanted to transform a vector of JSON strings into a vector of such parsed maps. We could simply do this:
 
-~~~
+```
 (map json/read-json ["{\"foo\":1}" "{\"bar\":42}"])
-~~~
+```
 
 However, the above is bound to the data structure, in this case a vector. That should not have to be the case, though. Rich Hickey provides a good example in his **[transducers talk](https://www.youtube.com/watch?v=6mTbuzafcII)**, likening the above to having to tell the guys processing luggage at the airport the same instructions twice, once for trolleys and again for conveyor belts, where in reality that should not matter. 
 
@@ -46,26 +45,26 @@ We could, for example, not only run the mapping function over every item in a ve
 
 With Clojure 1.7, we can now create such a transducing function by simply leaving out the data structure:
 
-~~~
+```
 (def xform (map json/read-json))
-~~~
+```
 
 Now, we can apply this transducing function to different kinds of data structures that are transducible processes. For example, we could transform all entries from a vector into another vector, like so:
 
-~~~
+```
 (into [] xform ["{\"foo\":1}" "{\"bar\":42}"])
-~~~
+```
 
 Or into a sequence, like this:
 
-~~~
+```
 (sequence xform ["{\"foo\":1}" "{\"bar\":42}"])
-~~~
+```
 
 It may not look terribly useful so far. But this can also be applied to a channel. Say, we want to create a channel that accepts JSON strings and transforms each message into a Clojure map. Simple:
 
-~~~
+```
 (chan 1 xform)
-~~~
+```
 
 The above creates a channel with a buffer size of one that applies the transducer to every element.

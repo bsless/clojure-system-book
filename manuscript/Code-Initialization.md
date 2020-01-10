@@ -2,8 +2,7 @@
 
 Let's have a look at how the initialization of the application looks like in **[code](https://github.com/matthiasn/BirdWatch/blob/a26c201d2cc2c89f4b3d2ecb8e6adb403e6f89c7/Clojure-Websockets/src/clj/birdwatch/main.clj)**:
 
-{line-numbers=off,lang=clojure}
-~~~
+```clojure
 (ns birdwatch.main
   (:gen-class)
   (:require
@@ -44,14 +43,13 @@ Let's have a look at how the initialization of the application looks like in **[
   (pid/delete-on-shutdown! (:pidfile-name conf))
   (log/info "Application started, PID" (pid/current))
   (alter-var-root #'system component/start))
-~~~
+```
 
 I personally think this **reads really well**, even if you have never seen Clojure before in your life. Roughly the first half is concerned with imports and reading the configuration file. Next, we have the ````get-system```` function which declares what components depend on what other components. The system is finally started in the ````-main```` function (plus the process ID logged and saved to a file). This is all there is to know about the application entry point. 
 
 Now, when we start the application, all the dependencies will be started in an order that the component library determines so that all dependencies are met. Here's the output of that startup process:
 
-{line-numbers=off,lang=text}
-~~~
+```
 mn:Clojure-Websockets mn$ lein run
 16:46:30.925 [main] INFO  birdwatch.main - Application started, PID 6682
 16:46:30.937 [main] INFO  birdwatch.twitter-client - Starting Twitterclient Channels Component
@@ -67,7 +65,7 @@ mn:Clojure-Websockets mn$ lein run
 16:46:32.376 [main] INFO  birdwatch.percolator - Starting Percolation Channels Component
 16:46:32.377 [main] INFO  birdwatch.percolator - Starting Percolator Component
 16:46:32.380 [main] INFO  birdwatch.switchboard - Starting Switchboard Component
-~~~
+```
 
 Note that in the code above, we are looking at a previous version of the application in which the entire application used to live inside a single JVM. The reason is that the corresponding animation in the **[original blog post](http://matthiasnehlsen.com/blog/2014/09/24/Building-Systems-in-Clojure-1/)** also deals with this single-JVM architecture.
 

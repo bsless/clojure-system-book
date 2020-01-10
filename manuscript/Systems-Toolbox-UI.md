@@ -32,7 +32,7 @@ As you can see in the screenshot above, we have a very simple UI that first of a
 
 Now remember from Redux that we can only interact with the state using actions. Let's have a look at the namespace implementing the store first.
 
-~~~
+```
 (ns example.store)
 
 (defn inc-handler
@@ -68,7 +68,7 @@ Now remember from Redux that we can only interact with the state using actions. 
                  :cnt/dec dec-handler
                  :cnt/remove remove-handler
                  :cnt/add add-handler}})
-~~~
+```
  
 Okay, let's go through this namespace from the bottom up. The `cmp-map` generates a map which the `systems-toolbox` library needs to create/instantiate a component. The `cmp-id` is straight-forward, this is required when later wiring the component with other components. Then, there is the `:state-fn` key. Here, a function is expected that takes the `put-fn`, which is the function that allows a component to emit messages at any time, irrespective of incoming messages, and that returns a map with the initial component state as an atom.
 
@@ -78,7 +78,7 @@ Then, there are the handler functions. Handler functions take a single argument,
 
 That's it for the state component. Now we can let other components observe its state, for example, our UI component:
 
-~~~
+```
 (ns example.counter-ui
   (:require [matthiasn.systems-toolbox-ui.reagent :as r]
             [matthiasn.systems-toolbox-ui.helpers :as h]))
@@ -110,7 +110,7 @@ That's it for the state component. Now we can let other components observe its s
               :view-fn counters-view
               :dom-id  "counter"}))
 
-~~~
+```
 
 Here, we have two different functions that each generates a piece of the UI. `counter-view` renders an individual counter, together with buttons for either increasing or decreasing the value of the counter. Note that the buttons do not interact with the state component directly. Rather, when clicking a button, a message is sent, which is then handled by the state component. Thus, we have a clear separation of concerns, rather than state mutation from anywhere.
 
@@ -118,7 +118,7 @@ Next, there is the `counters-view` function, which renders the application state
 
 Now, we finally need to wire everything together. This happens in the `core` namespace of our example:
 
-~~~
+```
 (ns example.core
   (:require [example.store :as store]
             [example.counter-ui :as cnt]
@@ -136,7 +136,7 @@ Now, we finally need to wire everything together. This happens in the `core` nam
      [:cmd/observe-state {:from :client/store-cmp :to :client/cnt-cmp}]]))
 
 (init)
-~~~
+```
 
 Here, we declare a switchboard in a `defonce`, so that it survives application reloads. This is necessary for use with **[figwheel](https://github.com/bhauman/lein-figwheel)**, but more about that later. Then, there's an init function, in which we send multiple commands to that switchboard. The `:cmd/init-comp` tells the switchboard to instantiate both the UI and the state components for us. The order here does not matter, because, at this point, they don't need to exchange messages yet. Then, we route all messages from the UI component to the store component. These are the command messages for incrementing and decrementing counters. In Redux, these are called actions. Then finally, we tell the switchboard that the UI component is supposed to observe the state of the store component. Thus every time our application state changes, the UI is re-rendered automatically.
 
@@ -149,12 +149,12 @@ You can, for example, try change to the text of the buttons after clicking them 
 
 Also, you can change the handlers on the fly. Try to change the `inc-handler` so that it resembles the following:
 
-~~~
+```
 (defn inc-handler
   "Handler for incrementing specific counter"
   [{:keys [current-state msg-payload]}]
     {:new-state (update-in current-state [:counters msg-payload] #(+ % 10))})
-~~~
+```
 
 Now, after reload, every click on the `inc` button of a counter will increase its value by 10, all while still retaining the previous state upon reload. Just note that reloading may not work as expected if you change the structure of the application state map. Obviously, the reload mechanism will only have the previous state at its disposal, and if that doesn't match expectations any longer, your application may not work after a reload triggered by figwheel. In that case, just do a "traditional" page reload.
 
