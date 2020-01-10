@@ -1,0 +1,106 @@
+* Introduction
+  :PROPERTIES:
+  :CUSTOM_ID: introduction
+  :END:
+
+Back in 2014, I had this cute little side project on GitHub called
+*[[https://github.com/matthiasn/BirdWatch][BirdWatch]]* for observing a
+live stream of Tweets. I had started writing it in
+*[[http://www.scala-lang.org/][Scala]]* on the server side and using
+*[[https://angularjs.org/][AngularJS]]* on the client side. The project
+had gained a fair amount interest on GitHub -- however, at that point, I
+had unfortunately fallen out of love with both. At the same time, I had
+developed a curiosity for *[[https://clojure.org/][Clojure]]* and LISP.
+So I thought, I might as well rewrite the project using Clojure and
+ClojureScript and see where that would take me.
+
+What I had found was a beautiful language but not a lot of shared
+knowledge on how to build complex systems with it. Some time ago, I had
+read books about
+*[[https://en.wikipedia.org/wiki/Communicating_sequential_processes][Communicating
+Sequential Processes (CSP)]]* so
+*[[https://github.com/clojure/core.async][core.async]]* was a natural
+candidate for building decoupled systems. A first version of the
+rewritten application relied only on
+*[[https://github.com/clojure/core.async][core.async]]* for moving
+messages around, but I was missing enough structure for building an
+application with it. I found Stuart Sierra's
+*[[https://github.com/stuartsierra/component][component library]]* and
+refactored the server-side application using components. However, I
+found it rather tedious to build applications that way, especially when
+core.async was involved. I'm not saying that the component library is a
+bad approach, but I was interested in building a different kind of
+system, and this library did not fit the bill.
+
+I wanted less boilerplate than was required when using the component
+library together with core.async. I also wanted to build systems that
+are observable by default. While I find CSP to be an excellent
+conceptual underpinning for creating distributed systems, I found that
+core.async was lacking in observability, which I consider crucial to
+being able to reason about a system. I found myself writing logging
+statements for every component to gain any insight. But how awful is
+logging for following asynchronous messages through a system? Do you
+like inserting log statements everywhere when writing software, and then
+removing them when you clean up the code? Sure, you could have all these
+only log in DEBUG mode for a particular component. But then when trying
+to find an issue in production, do you have the luxury to restart the
+application every time you reconsider what you want to be logged, always
+considering performance and your sanity? I think that's not right. We're
+dealing with immutable data structures here. Once they exist, they are
+cheap to pass around, including to some runtime-configurable way of
+following messages through the system you're building and hopefully
+running. For that purpose, I built the inspect library, which you can
+find on GitHub. That seemed like a good idea for a moment, but it was
+still lacking. First of all, I still had to insert the inspect
+statements manually, just like I had to with log statements. But why?
+Observing component in- and output is such a mundane thing to do that
+any component I built should automatically have it, with zero extra
+lines. Also, messages alone don't suffice when trying to observe any
+running systems. Let's say such a system consists of components that
+take messages from conveyor belts, process them and potentially output
+other messages on yet other conveyor belts. Then there are four distinct
+things I want to know when observing such subsystems:
+
+1) what does input look like,
+2) how does the component state look like before and after receiving the
+   message,
+3) what's the output from a component, and
+4) what's the structure of the running system.
+
+I would find it very helpful to be able to answer these questions for
+any given component in the system at a glance. It should not matter if
+it's the production system or a local development version of the same.
+That would be useful when revisiting code written a long time ago, like
+say a couple of weeks, and also when coming into a new project and
+mentally mapping the system for the first time.
+
+The *[[https://github.com/matthiasn/inspect][inspect**]]* library only
+addressed a) and c), and I realized that more drastic steps were
+necessary for solving b) and d). For that, I am working on *Inspect V2*,
+which makes use of the underlying assumptions of this library, and which
+I will introduce as the book progresses.
+
+Without further ado, I now invite you to have a look at my initial
+component and core.async approach. You may find the code tedious and
+repetitive, but that's okay, I feel the same way. On a tech radar, I
+would place this approach on hold.
+
+Following the chapters on my initial approach, which you may read in
+detail or skim read as you like, I will introduce the systems-toolbox
+library, which we're using for building a commercial application.
+Hopefully, you will also find this library useful for your projects. And
+if not, you may still find the approach of building tools as the first
+step to application-building interesting.
+
+So far, I'm happy with how things have developed, but there's still a
+lot to do to get closer to the vision of a system that's observable in a
+meaningful way during runtime. After all, I firmly believe that the map
+is not the territory and that the behavior of any complex system is not
+predictable from looking at a blueprint alone. The code is just that, a
+blueprint. Issues with any construction will come out when using it;
+tests only help so much as they can only reveal what we already know to
+look for in the first place. My thinking there has been influenced by a
+*Systems Thinking* approach, which keeps informing many decisions in the
+development of the systems-toolbox library. You'll find the concepts
+throughout the book, and there's also a gentle introduction to Systems
+Thinking the opening part of the book.

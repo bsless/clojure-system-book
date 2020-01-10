@@ -1,0 +1,125 @@
+*** Pure.css
+    :PROPERTIES:
+    :CUSTOM_ID: pure.css
+    :END:
+
+Earlier versions of this application used
+*[[http://getbootstrap.com][Bootstrap]]* as the CSS framework, including
+earlier versions of the Clojure / ClojureScript implementation. But
+after about a year, I really couldn't stand the Bootstrap look any
+longer. Sure, I could have changed stuff to make it look less like
+Bootstrap, but then why use Bootstrap in the first place. Here's how
+that old version looked like:
+
+#+CAPTION: Screenshot with Bootstrap CSS
+[[file:images/screenshot_bootstrap.png]]
+
+Bootstrap has served me alright over the last two years or so, but it
+was time for something simpler and cleaner.
+
+So, I looked for newer CSS frameworks and found
+*[[http://purecss.io][Pure]]*. Pure is much more lightweight than
+Bootstrap, requires a much smaller download and its grid model is also
+easier to use than Bootstrap. Here's how the new version looks like:
+
+#+CAPTION: Screenshot with Pure CSS
+[[file:images/screenshot.png]]
+
+I think this looks fresher than the old version. At the same time it
+also works much better on small mobile screens without much
+customization. In the iOS Simulator for the iPhone 6 Plus, for example,
+it looks like this:
+
+#+CAPTION: Screenshot iOS Simulator with Pure CSS
+[[file:images/screenshot_6plus.png]]
+
+Now it not only looks better, the HTML needed to generate this is also a
+lot simpler. Let's have a quick look at the HTML:
+
+{lang="HTML"}
+
+#+BEGIN_EXAMPLE
+    <body>
+        <div class="header">
+            <div class="home-menu pure-menu pure-menu-open pure-menu-horizontal pure-menu-fixed">
+                <a class="pure-menu-heading" href="">Birdwatch</a>
+                <ul>
+                    <li><a href="https://github.com/matthiasn/Birdwatch" target="_blank">GitHub</a></li>
+                    <li><a href="https://leanpub.com/building-a-system-in-clojure" target="_blank">About</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="content-wrapper">
+            <div class="l-box">
+                <div id="count">Tweets: <span id="tweet-count"></span></div>
+                <div id="search"></div>
+                <div id="pagination"></div>
+                <div id="sort-buttons"></div>
+            </div>
+            <div class="pure-g">
+                <div class="pure-u-1 pure-u-sm-1-2 pure-u-lg-5-12 l-box">
+                    <div id="tweet-frame"></div>
+                </div>
+                <div class="pure-u-1 pure-u-sm-1-2 pure-u-lg-7-12 l-box">
+                    <div id="timeseries1" class="timeseries"></div>
+                    <hr />
+                    <div id="wordCloud" class="cloud" ></div>
+                    <hr />
+                    <h5>word frequency</h5>
+                    <div id="wordcount-barchart" class="barchart" ></div>
+                    <hr />
+                    <div id="users-count"></div>
+                    <div id="total-tweet-count"></div>
+                </div>
+            </div>
+        </div>
+        <!-- Scripts omitted -->
+    </body>
+#+END_EXAMPLE
+
+I like **[[http://purecss.io][Pure]]* for the simplicity of its grid
+model. Although this is not a book about HTML and CSS, let's still walk
+through the HTML as it comes in handy when you want to design a web
+application.
+
+In the /header/ =div=, we create another =div=. We assign it a couple of
+classes for styling and place a few elements inside, like an unordered
+list for links we want to have in the menu bar.
+
+Next comes the actual content of the page, which we find inside a =div=
+assigned the /content-wrappper/-class. In there, we first have a =div=
+with class /l-box/, which gives us a little bit of padding:
+
+{lang="CSS"}
+
+#+BEGIN_EXAMPLE
+    .l-box {
+      padding: 1em 1em 0 1em;
+    }
+#+END_EXAMPLE
+
+Inside, we place =div=s with the IDs /tweet-count/, /search/,
+/pagination/ and /sort-buttons/. These are the IDs we render the
+respective components into using Reagent, remember?
+
+Next, we have a =div= with class /pure-g/. This contains two =div=s. One
+of them contains the list of tweets whereas the other one contains all
+the charts. Pure now gives us a straightforward way of defining a
+responsive grid, where the width of each is a fraction of the whole
+depending on the size of the screen.
+
+On very small screens, both of them will have =pure-u-1= applied, where
+both have the full width of the screen and are thus stacked on top of
+each other.
+
+On slightly larger screens (e.g. an iPhone 6 in landscape orientation),
+they will each occupy half of the width by having /pure-u-sm-1-2/
+applied.
+
+On even larger screens, such as desktops or tablets, the tweets will
+claim 5/12 of the space /pure-u-lg-5-12/ and the charts will claim 7/12
+of the space /pure-u-lg-7-12/. That's all there really is to know about
+the containers provided by Pure. Inside, we can render whatever, for
+example Reagent components or an SVG generated by D3.js as we will see
+later when we look at the word cloud.

@@ -1,0 +1,151 @@
+** TwitterClient - InterOp Component
+   :PROPERTIES:
+   :CUSTOM_ID: twitterclient---interop-component
+   :END:
+
+In the "Scaling Out" section of the architectural overview, I drew a
+picture of how I wanted to break apart the initial monolithic
+application and instead run different parts of the application in
+separate processes / separate JVMs. The idea was to have a single client
+for the connection to the
+*[[https://dev.twitter.com/streaming/overview][Twitter Streaming API]]*
+and the persistence of the received tweets in
+*[[http://www.elasticsearch.com][ElasticSearch]]*, plus multiple
+machines to serve WebSocket connections to the client. For the
+communication between the processes, I picked
+*[[http://redis.io/topics/pubsub][Redis Pub/Sub]]* because its model of
+communication suits the requirements really well.
+
+#+CAPTION: Redesigned Architecture - InterOp
+[[file:images/redesign2.png]]
+
+*** Redis Pub/Sub with Carmine
+    :PROPERTIES:
+    :CUSTOM_ID: redis-pubsub-with-carmine
+    :END:
+
+I chose *Pub/Sub* over a queue because I wanted to
+*[[http://en.wikipedia.org/wiki/Fan-out][fan-out]]* messages to multiple
+clients. Any connected processes are only supposed to be fed with data
+during their uptime, with no need to store anything for when they aren't
+connected. For interfacing with *Redis* from Clojure, I then chose
+*[[https://twitter.com/ptaoussanis][Peter Taoussanis]]*'s
+*[[https://github.com/ptaoussanis/carmine][carmine]]* client and it
+turned out to be a great choice.
+
+Let's look at some code. First of all, I am using a *component* that
+provides a *send channel* and a *receive channel*. It can be reused on
+either side of the Pub/Sub connection (or for bidirectional
+communication, of course). Here's the
+*[[https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/component.clj][code]]*.
+
+#+BEGIN_EXAMPLE
+    (ns birdwatch-tc.interop.component
+      (:gen-class)
+      (:require
+       [birdwatch-tc.interop.redis :as red]
+       [clojure.tools.logging :as log]
+       [clojure.pprint :as pp]
+       [com.stuartsierra.component :as component]
+       [clojure.core.async :as async :refer [chan]]))
+
+    ;;; The interop component allows sending and receiving messages via Redis Pub/Sub.
+    ;;; It has both a :send and a :receive channel and can be used on both sides of the Pub/Sub.
+    (defrecord Interop [conf channels]
+      component/Lifecycle
+      (start [component] (log/info "Starting Interop Component")
+             (let [conn {:pool {} :spec {:host (:redis-host conf) :port (:redis-port conf)}}]
+               (red/run-send-loop (:send channels) conn "matches")
+               (assoc component :conn conn)))
+      (stop  [component] (log/info "Stopping Interop Component") ;; TODO: proper teardown of resources
+             (assoc component :conn nil)))
+
+    (defn new-interop [conf] (map->Interop {:conf conf}))
+
+    (defrecord Interop-Channels []
+      component/Lifecycle
+      (start [component] (log/info "Starting Interop Channels Component")
+             (assoc component :send (chan) :receive (chan)))
+      (stop  [component] (log/info "Stop Interop Channels Component")
+             (assoc component :send nil :receive nil)))
+
+    (defn new-interop-channels [] (map->Interop-Channels {}))
+#+END_EXAMPLE
+
+The =Interop-Channels= component can now be wired into the =Interop=
+component where we create a configuration map and start a send loop with
+this configuration for the *"matches"* topic. Here's that
+*[[https://github.com/matthiasn/BirdWatch/blob/4ce6d8ff70359df9f98421c12984d24d0f311f6f/Clojure-Websockets/TwitterClient/src/clj/birdwatch_tc/interop/redis.clj][run-send-loop]]*
+function:
+
+#+BEGIN_EXAMPLE
+    (ns birdwatch-tc.interop.redis
+      (:gen-class)
+      (:require
+       [clojure.tools.logging :as log]
+       [clojure.pprint :as pp]
+       [clojure.core.match :as match :refer (match)]
+       [taoensso.carmine :as car :refer (wcar)]
+       [clojure.core.async :as async :refer [<! put! go-loop]]))
+
+    (defn run-send-loop
+      "loop for sending items by publishing them on a Redis pub topic"
+      [send-chan conn topic]
+      (go-loop [] (let [msg (<! send-chan)]
+                    (car/wcar conn (car/publish topic msg))
+                    (recur))))
+
+    (defn- msg-handler-fn
+      "create handler function for messages from Redis Pub/Sub"
+      [receive-chan]
+      (fn [[msg-type topic payload]]
+        (when (= msg-type "message")
+          (put! receive-chan payload))))
+
+    (defn subscribe-topic
+      "subscribe to topic, put items on specified channel"
+      [receive-chan conn topic]
+      (car/with-new-pubsub-listener
+        (:spec conn)
+        {"matches" (msg-handler-fn receive-chan)}
+        (car/subscribe topic)))
+
+    (defn unsubscribe
+      "unsubscribe listener from all topics"
+      [listener]
+      (car/with-open-listener listener (car/unsubscribe)))
+
+    (defn close
+      "close listener"
+      [listener]
+      (car/close-listener listener))
+#+END_EXAMPLE
+
+Here, we are only using =run-send-loop= to start sending all messages
+that come in on a channel. Specifically, this=go-loop= consumes all
+messages that come in on the =send-chan= channel and publishes them on
+the =topic= in Redis for the specified configuration connection =conn=.
+None of the other functions is used here, but this component is the same
+on both sides of the pub/sub. We will look at the counterpart when
+looking at the *MainApp* application.
+
+Here's a drawing of this component together with the channels:
+
+#+CAPTION: InterOp Component with Channels
+[[file:images/tc_interop.png]]
+
+*** Performance of Redis
+    :PROPERTIES:
+    :CUSTOM_ID: performance-of-redis
+    :END:
+
+Redis does a lot with very little CPU utilization. In a non-scientific
+test, I fired up 50 JVMs (on four machines) subscribing to the topic on
+which the TwitterClient publishes tweets with matched percolation
+queries. Then I changed the tracked term from the
+*[[https://dev.twitter.com/streaming/overview][Twitter Streaming API]]*
+to *"love"*, which reliably maxes out the rate of tweets permitted.
+Typically, with this term I see around *60 to 70* tweets per second.
+With 50 connected processes, *3000 to 3500* tweets were delivered per
+second overall, yet the CPU utilization of Redis idled somewhere between
+*1.7%* and *2.3%*.
